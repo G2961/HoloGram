@@ -1,0 +1,38 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Remove local aapt2 override
+        # локальный путь до aapt2.exe существует только на Windows-машине разработчика;
+        # в CI пусть Gradle скачает aapt2 из Google Maven
+        run: sed -i '/aapt2FromMavenOverride/d' gradle.properties
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HoloGram-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
